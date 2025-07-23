@@ -9,13 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tiptap/extension-link": "^3.0.7",
+    "@tiptap/extension-placeholder": "^3.0.7",
+    "@tiptap/react": "^3.0.7",
+    "@tiptap/starter-kit": "^3.0.7",
     "framer-motion": "^12.23.0",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.525.0",
     "next": "15.3.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "sonner": "^2.0.6",
+    "sooner": "^1.1.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

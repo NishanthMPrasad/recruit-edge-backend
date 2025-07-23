@@ -7,6 +7,7 @@ import { ModalContext } from '@/contexts/LoginModalContext';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import RecruitEdgeLogo from '@/components/RecruitEdgeLogo';
+import Link from 'next/link'; // Make sure Link is imported
 
 export default function Navbar() {
   const { openModal } = useContext(ModalContext);
@@ -62,7 +63,7 @@ export default function Navbar() {
   const isOnDashboard = pathname.includes('/recruiter/') || pathname.includes('/candidate/');
 
   return (
-    <nav className="w-full px-6 py-4 flex justify-between items-center bg-white/80 dark:bg-black/70 backdrop-blur-md border-b border-gray-200/50 dark:border-white/10 relative z-[9999]">
+    <nav className="w-full px-6 py-4 flex justify-between items-center bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-white/10 relative z-[9999]">
       <div 
         className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"
         onClick={handleLogoClick}
@@ -71,6 +72,18 @@ export default function Navbar() {
         RecruitEdge
       </div>
       
+      {/* Add this new section inside the nav element */}
+      <div className="hidden md:flex flex-grow justify-center">
+        {isAuthenticated && user?.role === 'candidate' && (
+          <Link 
+            href="/candidate/jobs" 
+            className="text-gray-700 dark:text-white px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Browse Jobs
+          </Link>
+        )}
+      </div>
+
       <div className="flex items-center space-x-3">
         <ThemeToggle />
         
