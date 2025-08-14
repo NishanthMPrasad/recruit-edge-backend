@@ -3,7 +3,9 @@ from flask import request, jsonify, send_file, Blueprint
 import io
 
 # Make sure these functions are correctly imported from your other files
-from .document_generator import generate_docx_from_data, generate_pdf_from_data
+#from .document_generator import generate_docx_from_data, generate_pdf_from_data
+from document_generator import generate_docx_from_data, generate_pdf_from_data
+
 from .file_parser import parse_resume_file
 from .gemini_utils import generate_elevator_pitch  # uses your Gemini helper
 
