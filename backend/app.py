@@ -38,7 +38,7 @@ if __name__ == '__main__':
 from flask import Flask
 from flask_cors import CORS
 from routes import api_bp  # Import the blueprint
-
+import os
 
 app = Flask(__name__)
 
