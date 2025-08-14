@@ -39,6 +39,7 @@ from flask import Flask
 from flask_cors import CORS
 from routes import api_bp  # Import the blueprint
 
+
 app = Flask(__name__)
 
 # Allow your React app to make requests to this Flask app
@@ -55,7 +56,10 @@ def home():
         "message": "RecruitEdge API is live 🚀"
     }, 200
 
+
+
 if __name__ == '__main__':
-    # Disable Flask’s built-in reloader to prevent restarts mid-upload
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
+
 
