@@ -5,6 +5,7 @@ import React from 'react';
 import { CalendarDays, Users } from 'lucide-react';
 
 interface RequisitionCardProps {
+  id: string; // add this
   title: string;
   location: string;
   postedDate: string;

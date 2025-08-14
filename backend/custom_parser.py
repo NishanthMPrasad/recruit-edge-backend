@@ -1,4 +1,5 @@
 # backend/custom_parser.py
+
 import re
 import uuid # For generating unique IDs similar to crypto.randomUUID on frontend
 
@@ -303,3 +304,4 @@ def parse_resume_data_custom(raw_resume_text: str) -> dict:
         process_buffer(current_section, section_content_buffer)
         
     return resume_data
+    

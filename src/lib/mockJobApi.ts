@@ -15,6 +15,20 @@ export type Job = {
   emoji: string; // For display purposes
 };
 
+// Shape of data your "new job" form sends
+export type NewJobInput = {
+  title: string;
+  location: string;
+  description: string;
+  employmentType: string;
+
+  companyName: string;              // form field for company
+  salaryRange: [number, number];    // e.g., [100000, 130000]
+
+  requirements?: string[];          // optional in the form
+  benefits?: string[];              // optional in the form
+};
+
 // This array will act as our in-memory database for jobs
 let jobs: Job[] = [
   {
@@ -73,27 +87,39 @@ export const mockJobApi = {
   },
 
   // Add a new job
-  addJob: async (newJobData: Omit<Job, 'id' | 'postedDate' | 'emoji' | 'benefits' | 'requirements' | 'company'> & { companyName: string; salaryRange: [number, number] }): Promise<Job> => {
+  addJob: async (newJobData: NewJobInput): Promise<Job> => {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    // Simulate adding a few default requirements/benefits and an emoji
+
     const addedJob: Job = {
       id: nanoid(), // Generate unique ID
       postedDate: new Date().toISOString().split('T')[0], // Current date
       company: newJobData.companyName, // Use company name from form
-      requirements: newJobData.requirements || ['Strong communication skills', 'Problem-solving abilities', 'Team player'], // Mock requirements or use provided
-      benefits: newJobData.benefits || ['Competitive salary', 'Health benefits', 'Paid time off'], // Mock benefits or use provided
+      requirements:
+        newJobData.requirements ?? [
+          'Strong communication skills',
+          'Problem-solving abilities',
+          'Team player',
+        ],
+      benefits:
+        newJobData.benefits ?? [
+          'Competitive salary',
+          'Health benefits',
+          'Paid time off',
+        ],
       emoji: '📄', // Default emoji for new jobs
+
       title: newJobData.title,
       location: newJobData.location,
       description: newJobData.description,
       employmentType: newJobData.employmentType,
-      salary: `$${newJobData.salaryRange[0] / 1000}K - $${newJobData.salaryRange[1] / 1000}K`, // Format salary
+      salary: `$${newJobData.salaryRange[0] / 1000}K - $${newJobData.salaryRange[1] / 1000}K`,
     };
+
     jobs.push(addedJob);
     return addedJob;
   },
 
-  // Update a job (simplified, not fully implemented for this task)
+  // Update a job (simplified)
   updateJob: async (id: string, updatedFields: Partial<Job>): Promise<Job | undefined> => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const index = jobs.findIndex((job) => job.id === id);
