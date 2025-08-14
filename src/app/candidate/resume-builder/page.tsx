@@ -587,7 +587,8 @@ export default function ResumeBuilder() {
   const [styleOptions, setStyleOptions] = useState<StyleOptions>({ fontFamily: 'Calibri, sans-serif', fontSize: 11, accentColor: '#34495e' });
   const [panelWidth, setPanelWidth] = useState(50);
   const isResizing = useRef(false);
-  const API_BASE_URL: string = 'http://127.0.0.1:5000/api';
+  const API_BASE_URL: string = `${process.env.NEXT_PUBLIC_API_BASE}/api`;
+
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
