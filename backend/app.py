@@ -19,7 +19,8 @@ if __name__ == '__main__':
 # backend/app.py
 from flask import Flask
 from flask_cors import CORS
-from .routes import api_bp  # Import the blueprint
+from routes import api_bp
+
 import os
 
 app = Flask(__name__)
