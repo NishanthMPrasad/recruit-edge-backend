@@ -1,3 +1,4 @@
+# backend/gemini_utils.py
 import os
 import json
 import google.generativeai as genai
@@ -25,10 +26,7 @@ def structure_text_with_ai(raw_resume_text: str) -> dict:
     Returns:
         A dictionary with the structured resume data.
     """
-    
-    # Define the JSON schema the AI must follow, now correctly specifying projects and certifications
-    # Removed hardcoded IDs like "exp1", "cert1" to avoid "duplicate key" warnings.
-    # The AI should now generate unique IDs or the frontend will assign crypto.randomUUID().
+
     json_schema = """
     {
       "personal": {"name": "", "email": "", "phone": "", "location": "", "legalStatus": ""},
@@ -54,12 +52,21 @@ def structure_text_with_ai(raw_resume_text: str) -> dict:
     }
     """
 
-    # Create the prompt for the AI model
+    # --- UPDATED PROMPT FOR SKILLS CATEGORIZATION ---
     prompt = f"""
-    You are an expert resume parsing assistant. Analyze the following raw text extracted from a resume and convert it into a structured JSON object. 
-    The JSON object must follow this exact schema. 
+    You are an expert resume parsing assistant. Analyze the following raw text extracted from a resume and convert it into a structured JSON object.
+    The JSON object must follow this exact schema.
     Do not add any fields that are not in the schema. Do not enclose the JSON in markdown backticks.
-    For the 'description' and 'achievements' fields, maintain the original line breaks from the resume text.
+
+    For the 'summary', 'description', and 'achievements' fields, if the original text contains bullet points, format them as an unordered HTML list (`<ul><li>...</li><li>...</li></ul>`). If the original text contains paragraphs, format them as HTML paragraphs (`<p>...</p>`). If text is bold or italic, use `<strong>` or `<em>` HTML tags. Ensure nested structures are correctly represented in HTML.
+
+    For the 'skills' array:
+    - Identify distinct skill categories (e.g., "Programming Languages", "Tools", "Cloud Platforms", "Soft Skills", "Databases", "Operating Systems", "Frameworks", "Libraries").
+    - For each identified category, create a separate object within the 'skills' array.
+    - Populate the 'category' field with the inferred category name.
+    - Populate the 'skills_list' field with the relevant skills for that category. The 'skills_list' should be plain text, comma-separated. If skills were presented in subsections in the original resume, ensure a newline character (`\\n`) separates each distinct group within the 'skills_list'. Do NOT use any HTML tags (`<p>`, `<ul>`, `<li>`, `<strong>`, `<em>`) for 'skills_list'.
+    - If skills are listed without explicit categories, group them under a general category like "Technical Skills" or "Key Skills".
+
     If a section (like 'projects' or 'publications') is not present in the text, provide an empty list for that key.
 
     **JSON Schema to follow:**
@@ -74,12 +81,11 @@ def structure_text_with_ai(raw_resume_text: str) -> dict:
     """
 
     try:
-        # Changed model to gemini-2.0-flash for consistency and better performance
-        model = genai.GenerativeModel('gemini-2.0-flash') 
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content(prompt)
         cleaned_json_string = response.text.strip().replace('```json', '').replace('```', '').strip()
         structured_data = json.loads(cleaned_json_string)
-        
+
         return structured_data
 
     except Exception as e:
@@ -99,53 +105,68 @@ def structure_text_with_ai(raw_resume_text: str) -> dict:
 # --- NEW: Elevator Pitch Function for Gemini ---
 def generate_elevator_pitch(resume_data: dict) -> str:
     """Generates a concise elevator pitch from resume data using Gemini."""
-    
+
     # Extract relevant info from resume_data
     personal = resume_data.get('personal', {})
     summary = resume_data.get('summary', '')
     experience = resume_data.get('experience', [])
     skills = resume_data.get('skills', [])
     education = resume_data.get('education', [])
-    projects = resume_data.get('projects', []) # Added projects
+    projects = resume_data.get('projects', [])
 
     # Concatenate relevant information for the prompt
     context_parts = []
     if personal.get('name'):
         context_parts.append(f"Name: {personal['name']}")
-    if personal.get('jobTitle'): 
+    if personal.get('jobTitle'):
         context_parts.append(f"Current Role: {personal['jobTitle']}")
     if summary:
-        context_parts.append(f"Summary: {summary}")
-    
+        # Strip HTML from summary for pitch generation, as pitch should be plain text
+        from bs4 import BeautifulSoup
+        clean_summary = BeautifulSoup(summary, 'html.parser').get_text(separator=' ')
+        context_parts.append(f"Summary: {clean_summary}")
+
     if experience:
         exp_strings = []
         for exp in experience:
-            exp_strings.append(f"- {exp.get('jobTitle', '')} at {exp.get('company', '')} ({exp.get('dates', '')}). Description: {exp.get('description', '')}")
+            # Strip HTML from description for pitch generation
+            from bs4 import BeautifulSoup
+            clean_description = BeautifulSoup(exp.get('description', ''), 'html.parser').get_text(separator=' ')
+            exp_strings.append(f"- {exp.get('jobTitle', '')} at {exp.get('company', '')} ({exp.get('dates', '')}). Description: {clean_description}")
         context_parts.append("Experience:\n" + "\n".join(exp_strings))
-    
+
     if skills:
         skill_strings = []
         for skill_cat in skills:
             if skill_cat.get('category') and skill_cat.get('skills_list'):
+                # skills_list is now expected to be plain text, so no need to strip HTML
                 skill_strings.append(f"- {skill_cat['category']}: {skill_cat['skills_list']}")
             elif skill_cat.get('skills_list'):
+                # skills_list is now expected to be plain text
                 skill_strings.append(f"- {skill_cat['skills_list']}")
-        context_parts.append("Skills:\n" + ", ".join(skill_strings))
+        context_parts.append("Skills:\n" + "\n".join(skill_strings)) # Join by newline as requested for plain text skills
 
-    if projects: # Added projects to context for pitch generation
+    if projects:
         proj_strings = []
         for proj in projects:
-            proj_strings.append(f"- {proj.get('title', '')} ({proj.get('date', '')}). Description: {proj.get('description', '')}")
+            # Strip HTML from description for pitch generation
+            from bs4 import BeautifulSoup
+            clean_description = BeautifulSoup(proj.get('description', ''), 'html.parser').get_text(separator=' ')
+            proj_strings.append(f"- {proj.get('title', '')} ({proj.get('date', '')}). Description: {clean_description}")
         context_parts.append("Projects:\n" + "\n".join(proj_strings))
 
     if education:
         edu_strings = []
         for edu in education:
-            edu_strings.append(f"- {edu.get('degree', '')} from {edu.get('institution', '')} ({edu.get('graduationYear', '')})")
+            # Strip HTML from achievements for pitch generation
+            from bs4 import BeautifulSoup
+            clean_achievements = BeautifulSoup(edu.get('achievements', ''), 'html.parser').get_text(separator=' ')
+            edu_strings.append(f"- {edu.get('degree', '')} from {edu.get('institution', '')} ({edu.get('graduationYear', '')}). Achievements: {clean_achievements}")
         context_parts.append("Education:\n" + "\n".join(edu_strings))
 
+
     full_context = "\n\n".join(context_parts)
-    
+
     prompt = f"""
     Based on the following resume data, generate a compelling and concise 30-second elevator pitch.
     The pitch should be professional, engaging, and highlight the candidate's key strengths, experiences, and career goals.
@@ -159,9 +180,9 @@ def generate_elevator_pitch(resume_data: dict) -> str:
 
     Elevator Pitch:
     """
-    
+
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash') # Ensure you have this model downloaded for Gemini
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
@@ -181,10 +202,23 @@ def enhance_section_with_ai(section_name, text_to_enhance):
     """
     try:
         model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        # Adjust prompt based on section name
+        if section_name.lower() == 'skills':
+            prompt_instruction = """
+            Rewrite the following skills list to be more organized and impactful.
+            Maintain the categorization (e.g., "Programming Languages:"). Separate different categories or groups of skills with a newline character. Do NOT use any HTML tags (like <p>, <ul>, <li>, <strong>, <em>).
+            Provide 3 different versions. Return each version on a new line.
+            """
+        else: # For other sections like Summary, Experience Description, Education Achievements
+            prompt_instruction = """
+            Rewrite the following {section_name} to be more impactful, professional, and concise.
+            If the original text contains bullet points, format them as an unordered HTML list (`<ul><li>...</li><li>...</li></li></ul>`). If the original text contains paragraphs, format them as HTML paragraphs (`<p>...</p>`). If text should be bold or italic, use `<strong>` or `<em>` HTML tags. Ensure nested structures are correctly represented in HTML.
+            Provide 3 different versions. Return each version on a new line.
+            """
+
         prompt = f"""
-        Rewrite the following {section_name} to be more impactful, professional, and concise.
-        Provide 3 different versions. Ensure the output is clean text, without any markdown formatting like bullet points or bolding, unless it's inherent to the content (e.g., a list of skills).
-        Return each version on a new line.
+        {prompt_instruction}
 
         Original {section_name}:
         {text_to_enhance}
@@ -192,8 +226,7 @@ def enhance_section_with_ai(section_name, text_to_enhance):
         Enhanced Versions:
         """
         response = model.generate_content(prompt)
-        # Split the response into lines, assuming each line is a new version
         return [version.strip() for version in response.text.split('\n') if version.strip()]
     except Exception as e:
         print(f"Error enhancing section with AI: {e}")
-        return [text_to_enhance] # Return original on error
+        return [text_to_enhance]
