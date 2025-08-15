@@ -588,6 +588,8 @@ export default function ResumeBuilder() {
   const [panelWidth, setPanelWidth] = useState(50);
   const isResizing = useRef(false);
   const API_BASE_URL: string = `${process.env.NEXT_PUBLIC_API_BASE}/api`;
+  console.log("API_BASE_URL in frontend:", API_BASE_URL);
+
 
 
   const [isRecording, setIsRecording] = useState(false);
